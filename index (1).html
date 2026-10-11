@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lab 30 — Control Evidence Collector | RouteToRoot</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #21262d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #58a6ff;
+      --pass: #3fb950;
+      --warn: #d29922;
+      --fail: #f85149;
+      --font-mono: 'Courier New', Courier, monospace;
+      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      font-size: 15px;
+      line-height: 1.7;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    /* NAV */
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 2.5rem;
+    }
+    nav .brand {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--accent);
+      letter-spacing: 0.05em;
+    }
+    nav a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      margin-left: 1.5rem;
+    }
+    nav a:hover { color: var(--text); }
+
+    /* HEADER */
+    .lab-label {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.75rem;
+      line-height: 1.2;
+    }
+    .subtitle {
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin-bottom: 1.5rem;
+      max-width: 620px;
+    }
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      margin-bottom: 2.5rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .meta-row span strong { color: var(--text); }
+
+    /* STAT CARDS */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+    }
+    .stat {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem;
+      text-align: center;
+    }
+    .stat .num {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--accent);
+      font-family: var(--font-mono);
+      display: block;
+    }
+    .stat .label {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 0.25rem;
+    }
+
+    /* SECTIONS */
+    section { margin-bottom: 2.5rem; }
+    h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      letter-spacing: 0.05em;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    p { color: var(--text); margin-bottom: 0.75rem; max-width: 680px; }
+
+    /* TABLES */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+    }
+    th {
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      background: var(--surface);
+      color: var(--muted);
+      font-weight: 600;
+      border: 1px solid var(--border);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+    }
+    td {
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--border);
+      color: var(--text);
+      vertical-align: top;
+    }
+    tr:nth-child(even) td { background: var(--surface); }
+
+    /* STATUS BADGES */
+    .badge {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: 3px;
+      letter-spacing: 0.05em;
+    }
+    .badge-pass { background: rgba(63,185,80,0.15); color: var(--pass); }
+    .badge-warn { background: rgba(210,153,34,0.15); color: var(--warn); }
+    .badge-fail { background: rgba(248,81,73,0.15); color: var(--fail); }
+
+    /* CODE BLOCKS */
+    pre {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem 1.25rem;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      overflow-x: auto;
+      color: var(--text);
+      margin-bottom: 1rem;
+    }
+
+    /* OUTCOME BOX */
+    .outcome {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--pass);
+      border-radius: 6px;
+      padding: 1.25rem 1.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--text);
+      line-height: 2;
+    }
+    .outcome span { color: var(--pass); margin-right: 0.5rem; }
+
+    /* SCREENSHOT FIGURES */
+    figure {
+      margin: 1.25rem 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    figure img {
+      width: 100%;
+      display: block;
+    }
+    figcaption {
+      padding: 0.6rem 1rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      border-top: 1px solid var(--border);
+    }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--border);
+      padding-top: 1.5rem;
+      margin-top: 3rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 600px) {
+      h1 { font-size: 1.4rem; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <span class="brand">[ RouteToRoot ]</span>
+    <div>
+      <a href="https://routetoroot.github.io">Home</a>
+      <a href="https://github.com/RouteToRoot">GitHub</a>
+    </div>
+  </nav>
+
+  <div class="lab-label">// SOC Portfolio — Lab 30</div>
+  <h1>Control Evidence Collector</h1>
+  <p class="subtitle">A Python security automation tool that collects system evidence, checks it against NIST SP 800-53 controls, and detects configuration drift between runs.</p>
+
+  <div class="meta-row">
+    <span><strong>Date:</strong> October 10, 2026</span>
+    <span><strong>Language:</strong> Python 3.11.9</span>
+    <span><strong>Platform:</strong> Kali Linux</span>
+    <span><strong>Scripts:</strong> 2</span>
+    <span><strong>Controls Mapped:</strong> 3</span>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><span class="num">2</span><div class="label">Scripts Built</div></div>
+    <div class="stat"><span class="num">3</span><div class="label">NIST Controls Mapped</div></div>
+    <div class="stat"><span class="num">3</span><div class="label">Evidence Categories</div></div>
+    <div class="stat"><span class="num">1</span><div class="label">Drift Detected</div></div>
+  </div>
+
+  <section>
+    <h2>Environment</h2>
+    <table>
+      <tr><th>Field</th><th>Detail</th></tr>
+      <tr><td>Platform</td><td>Kali Linux 2025 (VMware Workstation)</td></tr>
+      <tr><td>Language</td><td>Python 3.11.9</td></tr>
+      <tr><td>Editor</td><td>GNU nano 8.1</td></tr>
+      <tr><td>Evidence Sources</td><td>/etc/passwd, /etc/ssh/sshd_config, /etc/sudoers</td></tr>
+      <tr><td>Output Format</td><td>Timestamped JSON</td></tr>
+      <tr><td>Scripts</td><td>collect.py, check.py</td></tr>
+      <tr><td>Working Directory</td><td>~/lab30</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>Script 1 — Evidence Collector</h2>
+    <p><strong>collect.py</strong> reads three system sources and saves the findings to a timestamped JSON file. Each run produces a new snapshot that can be compared against previous runs for drift detection.</p>
+    <p>Evidence collected per run:</p>
+    <ul style="color:var(--text);padding-left:1.5rem;margin-bottom:0.75rem;">
+      <li>Interactive user accounts from <code style="font-family:var(--font-mono);color:var(--accent)">/etc/passwd</code> (uid ≥ 1000)</li>
+      <li>SSH configuration from <code style="font-family:var(--font-mono);color:var(--accent)">/etc/ssh/sshd_config</code></li>
+      <li>Sudo rights from <code style="font-family:var(--font-mono);color:var(--accent)">/etc/sudoers</code></li>
+    </ul>
+    <figure>
+      <img src="lab30-step1-collect-output.png" alt="Step 1 — collect.py output showing timestamped JSON evidence" />
+      <figcaption>Step 1 — collect.py — timestamped JSON evidence file saved successfully</figcaption>
+    </figure>
+    <figure>
+      <img src="lab30-step2-collect-output.png" alt="Step 2 — collect.py output with SSH config and sudo rights added" />
+      <figcaption>Step 2 — collect.py expanded — SSH config and sudo rights now included in evidence</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>Script 2 — Baseline Checker and Drift Detector</h2>
+    <p><strong>check.py</strong> loads the two most recent evidence snapshots. It runs each finding through a set of NIST SP 800-53 rules and flags any change between runs as configuration drift.</p>
+    <figure>
+      <img src="lab30-step3-baseline-check.png" alt="Step 3 — baseline check output showing FAIL, WARN, and PASS results" />
+      <figcaption>Step 3 — check.py — baseline check results mapped to NIST 800-53 controls</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>NIST SP 800-53 Control Mapping</h2>
+    <table>
+      <tr><th>Control</th><th>Description</th><th>Check</th><th>Result</th></tr>
+      <tr>
+        <td>AC-17</td>
+        <td>Remote Access</td>
+        <td>PermitRootLogin must be set to no</td>
+        <td><span class="badge badge-fail">FAIL → PASS</span></td>
+      </tr>
+      <tr>
+        <td>AC-6</td>
+        <td>Least Privilege</td>
+        <td>Flags broad sudo access (ALL:ALL)</td>
+        <td><span class="badge badge-warn">WARN</span></td>
+      </tr>
+      <tr>
+        <td>IA-2</td>
+        <td>User Accounts</td>
+        <td>Flags unexpected interactive users</td>
+        <td><span class="badge badge-pass">PASS</span></td>
+      </tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>Self-Test — Drift Detection Validated</h2>
+    <p>To validate drift detection, <code style="font-family:var(--font-mono);color:var(--accent)">PermitRootLogin no</code> was deliberately added to <code style="font-family:var(--font-mono);color:var(--accent)">/etc/ssh/sshd_config</code>. A new evidence snapshot was collected and check.py was run against it.</p>
+    <p>Results confirmed:</p>
+    <ul style="color:var(--text);padding-left:1.5rem;margin-bottom:0.75rem;">
+      <li>AC-17 status changed from <strong>FAIL</strong> to <strong>PASS</strong></li>
+      <li>Drift detection flagged: <em>SSH CONFIG CHANGE — was: {} | now: {'PermitRootLogin': 'no'}</em></li>
+    </ul>
+    <figure>
+      <img src="lab30-step4-self-test.png" alt="Step 4 — self-test output showing FAIL becoming PASS and drift detected" />
+      <figcaption>Step 4 — self-test — PermitRootLogin set to no; AC-17 flips from FAIL to PASS; drift detected</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>Detection Engineering Insights</h2>
+    <p>This lab demonstrates the core loop of any configuration monitoring system: collect a snapshot, compare it to a baseline, flag what changed. The same pattern underlies enterprise tools like AWS Config, Azure Policy, and Qualys Policy Compliance — this tool implements that logic from scratch in Python.</p>
+    <p>Key engineering decisions made during the build:</p>
+    <ul style="color:var(--text);padding-left:1.5rem;margin-bottom:0.75rem;">
+      <li>Evidence is stored as timestamped JSON so every run is independently auditable</li>
+      <li>The sudoers file requires elevated privileges to read — the tool handles PermissionError gracefully and flags it rather than crashing</li>
+      <li>Drift is detected by comparing Python sets, which handles ordering differences between runs cleanly</li>
+      <li>FAIL vs WARN distinction mirrors real SOC alert severity: FAIL means a specific requirement is unmet; WARN means something exists that warrants human review</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Outcome</h2>
+    <div class="outcome">
+      <span>▸</span> collect.py — user accounts, SSH config, and sudo rights collected to timestamped JSON<br>
+      <span>▸</span> check.py — NIST SP 800-53 baseline check implemented across 3 controls<br>
+      <span>▸</span> Drift detection confirmed — SSH config change caught between runs<br>
+      <span>▸</span> AC-17 status changed from FAIL to PASS after PermitRootLogin no was set<br>
+      <span>▸</span> Lab 30 confirmed — all scripts functional on Kali Linux
+    </div>
+  </section>
+
+  <footer>
+    <span><a href="https://routetoroot.github.io">routetoroot.github.io</a> | <a href="https://github.com/RouteToRoot/soc-lab-30-control-evidence-collector">GitHub Repo</a></span>
+    <span>Eric Ellison — SOC Portfolio</span>
+  </footer>
+
+</body>
+</html>
